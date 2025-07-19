@@ -26,12 +26,7 @@
 				<p class="text-sm text-amber-700">Weather & Disaster Monitoring</p>
 			</div>
 			
-			{#if $isCitiesLoading}
-				<div class="flex items-center space-x-2 text-amber-700">
-					<div class="loading-spinner"></div>
-					<span class="text-lg">Loading location...</span>
-				</div>
-			{:else if popularCities.length > 0}
+			{#if popularCities.length > 0}
 				<div class="flex items-center space-x-2 text-amber-800">
 					<div class="text-lg">📍</div>
 					<select 
@@ -70,14 +65,7 @@
 				{formatDateGMT($currentTime)}
 			</div>
 			<div class="text-xs text-amber-600 mt-1">
-				{#if $isCitiesLoading || $isLoadingDisasters}
-					<div class="flex items-center justify-end space-x-1">
-						<div class="loading-spinner" style="width: 12px; height: 12px;"></div>
-						<span>Updating...</span>
-					</div>
-				{:else}
 					Last updated: {formatShortTimeGMT(lastUpdate)} UTC
-				{/if}
 			</div>
 		</div>
 	</div>

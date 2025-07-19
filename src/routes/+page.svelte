@@ -65,8 +65,7 @@
 		{ name: 'Auckland', country: 'NZ', state: '', lat: -36.8485, lon: 174.7633 }
 	];
 	
-	let currentCityIndex = 0;
-	let isManualSelection = false;
+	let currentCityIndex = Math.floor(Math.random() * popularCities.length);
 	
 	async function loadInitialData() {
 		try {
@@ -132,12 +131,6 @@
 			setCitiesLoadingState(true);
 			setDisasterLoadingState(true);
 			
-			// Only cycle cities if not manually selected
-			if (!isManualSelection) {
-				currentCityIndex = (currentCityIndex + 1) % popularCities.length;
-				const nextCity = popularCities[currentCityIndex];
-				currentLocation.set(nextCity);
-			}
 			
 			// Refresh weather data for all cities
 			await loadAllCitiesWeather();
@@ -169,13 +162,6 @@
 			city.name === selectedCity.name && city.country === selectedCity.country
 		);
 		
-		// Mark as manual selection to stop auto-cycling
-		isManualSelection = true;
-		
-		// Optional: Resume auto-cycling after 5 minutes of inactivity
-		setTimeout(() => {
-			isManualSelection = false;
-		}, 300000); // 5 minutes
 	}
 	
 	onMount(() => {
