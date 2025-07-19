@@ -1,0 +1,253 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global styles for dashboard */
+* {
+	box-sizing: border-box;
+}
+
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	width: 100vw;
+	overflow: hidden;
+	background: linear-gradient(135deg, #faf7f2 0%, #f5f0e8 50%, #f0eadf 100%);
+	color: #3d2914;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+#svelte {
+	height: 100vh;
+	width: 100vw;
+}
+
+/* Dashboard layout utilities */
+.dashboard-grid {
+	display: grid;
+	height: 100vh;
+	width: 100vw;
+	gap: 1rem;
+	padding: 1rem;
+	grid-template-columns: 1fr 1fr 1fr;
+	grid-template-rows: auto 1fr 1fr;
+	grid-template-areas:
+		"header header header"
+		"weather disaster maps"
+		"alerts alerts maps";
+	overflow: hidden;
+}
+
+.dashboard-header {
+	grid-area: header;
+}
+
+.weather-section {
+	grid-area: weather;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.disaster-section {
+	grid-area: disaster;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.maps-section {
+	grid-area: maps;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.alerts-section {
+	grid-area: alerts;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* Responsive grid for smaller screens */
+@media (max-width: 1024px) {
+	.dashboard-grid {
+		grid-template-columns: 1fr 1fr;
+		grid-template-areas:
+			"header header"
+			"weather disaster"
+			"maps maps"
+			"alerts alerts";
+		grid-template-rows: auto 1fr 1fr 1fr;
+	}
+}
+
+@media (max-width: 768px) {
+	.dashboard-grid {
+		grid-template-columns: 1fr;
+		grid-template-areas:
+			"header"
+			"weather"
+			"disaster"
+			"alerts"
+			"maps";
+		grid-template-rows: auto repeat(4, 1fr);
+		gap: 0.5rem;
+		padding: 0.5rem;
+	}
+}
+
+/* Widget base styles */
+.widget {
+	background: rgba(255, 253, 249, 0.85);
+	border: 1px solid rgba(139, 116, 88, 0.2);
+	border-radius: 0.75rem;
+	padding: 1rem;
+	backdrop-filter: blur(10px);
+	box-shadow: 0 8px 32px rgba(139, 116, 88, 0.1);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.widget-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 1px solid rgba(139, 116, 88, 0.3);
+	flex-shrink: 0;
+}
+
+.widget-title {
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #3d2914;
+}
+
+.widget-content {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-right: 4px;
+	min-height: 0;
+}
+
+/* Status indicators */
+.status-indicator {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-right: 0.5rem;
+}
+
+.status-online {
+	background: #059669;
+}
+
+.status-warning {
+	background: #d97706;
+}
+
+.status-error {
+	background: #dc2626;
+}
+
+/* Severity colors */
+.severity-low {
+	color: #059669;
+}
+
+.severity-medium {
+	color: #d97706;
+}
+
+.severity-high {
+	color: #dc2626;
+}
+
+.severity-critical {
+	color: #991b1b;
+	font-weight: 600;
+}
+
+/* Weather icons */
+.weather-icon {
+	width: 64px;
+	height: 64px;
+	filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+/* Temperature display */
+.temperature-large {
+	font-size: 3rem;
+	font-weight: 300;
+	line-height: 1;
+}
+
+.temperature-medium {
+	font-size: 1.5rem;
+	font-weight: 400;
+}
+
+/* Alert animations */
+@keyframes pulse-alert {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+}
+
+.alert-critical {
+	animation: pulse-alert 2s ease-in-out infinite;
+}
+
+/* Loading states */
+.loading-spinner {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	border: 2px solid rgba(139, 116, 88, 0.3);
+	border-radius: 50%;
+	border-top-color: #8b7458;
+	animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Scrollbar styling */
+.widget-content::-webkit-scrollbar {
+	width: 6px;
+}
+
+.widget-content::-webkit-scrollbar-track {
+	background: rgba(139, 116, 88, 0.1);
+	border-radius: 3px;
+}
+
+.widget-content::-webkit-scrollbar-thumb {
+	background: rgba(139, 116, 88, 0.3);
+	border-radius: 3px;
+}
+
+.widget-content::-webkit-scrollbar-thumb:hover {
+	background: rgba(139, 116, 88, 0.5);
+}
+
+/* Kiosk mode styles */
+@media (display-mode: fullscreen) {
+	body {
+		cursor: none;
+	}
+	
+	.dashboard-grid {
+		padding: 0.5rem;
+	}
+}

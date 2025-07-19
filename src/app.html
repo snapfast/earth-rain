@@ -1,12 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" %sveltekit.theme%>
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#faf7f2" />
+		<meta name="description" content="Earth Rain - Real-time Weather & Disaster Monitoring Dashboard" />
+		
+		<!-- PWA Meta Tags -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="Earth Rain" />
+		<meta name="application-name" content="Earth Rain" />
+		
+		<!-- Fullscreen Meta Tags -->
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-touch-fullscreen" content="yes" />
+		
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<body data-sveltekit-preload-data="hover" class="bg-gradient-to-br from-amber-50 to-orange-50 text-amber-900 overflow-hidden m-0 p-0">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>
