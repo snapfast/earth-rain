@@ -43,25 +43,25 @@ html, body {
 	grid-area: header;
 }
 
-.weather-section {
+.global-weather-panel {
 	grid-area: weather;
 	min-height: 0;
 	overflow: hidden;
 }
 
-.disaster-section {
+.disaster-monitoring-panel {
 	grid-area: disaster;
 	min-height: 0;
 	overflow: hidden;
 }
 
-.maps-section {
+.regional-map-panel {
 	grid-area: maps;
 	min-height: 0;
 	overflow: hidden;
 }
 
-.alerts-section {
+.active-alerts-panel {
 	grid-area: alerts;
 	min-height: 0;
 	overflow: hidden;

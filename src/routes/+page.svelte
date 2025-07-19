@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { weatherData, currentLocation, citiesWeatherData, setCitiesWeatherData, setCitiesLoadingState } from '../lib/stores/weather.js';
+	import { weatherData, currentLocation, citiesWeatherData, setCitiesWeatherData, setCitiesLoadingState, setCitiesWeatherError } from '../lib/stores/weather.js';
 	import { disasterEvents, setDisasterLoadingState } from '../lib/stores/disaster.js';
 	import { WeatherAPI } from '../lib/api/weather.js';
 	import { DisasterAPI } from '../lib/api/disaster.js';
@@ -117,10 +117,20 @@
 				})
 				.filter(weather => weather !== null);
 			
-			setCitiesWeatherData(successfulWeather);
+			// Check if we have any successful results
+			if (successfulWeather.length === 0) {
+				// All requests failed, set error state
+				setCitiesWeatherError('Weather data temporarily unavailable due to API rate limits. Please try again later.');
+			} else {
+				setCitiesWeatherData(successfulWeather);
+				// Clear any previous errors
+				setCitiesWeatherError(null);
+			}
+			
 			setCitiesLoadingState(false);
 		} catch (error) {
 			console.error('Failed to load cities weather:', error);
+			setCitiesWeatherError('Failed to load weather data');
 			setCitiesLoadingState(false);
 		}
 	}
@@ -167,8 +177,8 @@
 	onMount(() => {
 		loadInitialData();
 		
-		// Set up auto-refresh every 30 seconds
-		updateInterval = setInterval(refreshData, 30000);
+		// Set up auto-refresh every hour
+		updateInterval = setInterval(refreshData, 3600000);
 	});
 	
 	onDestroy(() => {
@@ -187,19 +197,19 @@
 		<DashboardHeader {lastUpdate} {popularCities} onCitySelect={handleCitySelect} />
 	</div>
 	
-	<div class="weather-section">
+	<div class="global-weather-panel" data-testid="global-weather-panel">
 		<WeatherWidget />
 	</div>
 	
-	<div class="disaster-section">
+	<div class="disaster-monitoring-panel" data-testid="disaster-monitoring-panel">
 		<DisasterWidget />
 	</div>
 	
-	<div class="maps-section">
+	<div class="regional-map-panel" data-testid="regional-map-panel">
 		<MapsWidget />
 	</div>
 	
-	<div class="alerts-section">
+	<div class="active-alerts-panel" data-testid="active-alerts-panel">
 		<AlertsWidget />
 	</div>
 </main>

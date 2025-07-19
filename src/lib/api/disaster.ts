@@ -51,22 +51,19 @@ export class DisasterAPI {
 
 	static async getRecentDisasters(): Promise<DisasterEvent[]> {
 		try {
-			// Get earthquakes from USGS
+			// Get earthquakes from USGS (real data only)
 			const earthquakes = await this.getEarthquakesFromUSGS();
 			
-			// Add mock data for other disaster types since most real-time disaster APIs require keys
-			const otherDisasters = this.getMockDisasterData();
-			
-			// Combine and sort by timestamp
-			const allDisasters = [...earthquakes, ...otherDisasters]
+			// Sort by timestamp and return real data only
+			const allDisasters = earthquakes
 				.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-				.slice(0, 20);
+				.slice(0, 50);
 
 			return allDisasters;
 		} catch (error) {
 			console.error('Failed to fetch disaster data:', error);
-			// Return comprehensive mock data if all fails
-			return this.getAllMockDisasterData();
+			// Return empty array if API fails - no mock data
+			return [];
 		}
 	}
 
@@ -77,11 +74,11 @@ export class DisasterAPI {
 
 	private static async getEarthquakesFromUSGS(): Promise<EarthquakeData[]> {
 		try {
-			// Try multiple endpoints to ensure we get data
+			// Try multiple endpoints to ensure we get data, starting with lower magnitude thresholds
 			const endpoints = [
-				`${USGS_BASE_URL}/all_day.geojson`,
+				`${USGS_BASE_URL}/1.0_day.geojson`,
 				`${USGS_BASE_URL}/2.5_day.geojson`,
-				`${USGS_BASE_URL}/1.0_day.geojson`
+				`${USGS_BASE_URL}/all_day.geojson`
 			];
 
 			let data = null;
@@ -108,7 +105,7 @@ export class DisasterAPI {
 			const earthquakes = data.features
 				.filter((feature: any) => {
 					const props = feature.properties;
-					return props.mag && props.mag >= 1.0; // Lower threshold to ensure we get data
+					return props.mag && props.mag >= 0.5; // Even lower threshold to get more real data
 				})
 				.map((feature: any) => {
 					const props = feature.properties;
@@ -139,171 +136,15 @@ export class DisasterAPI {
 				.sort((a: EarthquakeData, b: EarthquakeData) => 
 					b.timestamp.getTime() - a.timestamp.getTime()
 				)
-				.slice(0, 10); // Limit to 10 most recent earthquakes
+				.slice(0, 30); // Limit to 30 most recent earthquakes
 
 			return earthquakes;
 		} catch (error) {
 			console.error('Failed to fetch earthquake data:', error);
-			return this.getMockEarthquakeData();
+			return [];
 		}
 	}
 
-	private static getMockEarthquakeData(): EarthquakeData[] {
-		const mockTime = new Date();
-		return [
-			{
-				id: 'mock-1',
-				type: 'earthquake',
-				title: 'M 4.2 - 15km NW of Ridgecrest, CA',
-				description: 'Magnitude 4.2 earthquake near Ridgecrest, California',
-				severity: 'medium',
-				location: {
-					name: '15km NW of Ridgecrest, CA',
-					lat: 35.6762,
-					lon: -117.6746
-				},
-				timestamp: new Date(mockTime.getTime() - 1800000), // 30 minutes ago
-				source: 'USGS',
-				url: 'https://earthquake.usgs.gov',
-				metadata: {
-					magnitude: 4.2,
-					depth: 8.5,
-					significance: 289,
-					tsunami_warning: false
-				}
-			},
-			{
-				id: 'mock-2',
-				type: 'earthquake',
-				title: 'M 5.1 - 89km SSE of Perryville, Alaska',
-				description: 'Magnitude 5.1 earthquake near Perryville, Alaska',
-				severity: 'medium',
-				location: {
-					name: '89km SSE of Perryville, Alaska',
-					lat: 55.2073,
-					lon: -159.1501
-				},
-				timestamp: new Date(mockTime.getTime() - 3600000), // 1 hour ago
-				source: 'USGS',
-				url: 'https://earthquake.usgs.gov',
-				metadata: {
-					magnitude: 5.1,
-					depth: 42.3,
-					significance: 456,
-					tsunami_warning: false
-				}
-			},
-			{
-				id: 'mock-3',
-				type: 'earthquake',
-				title: 'M 3.8 - 12km E of Mammoth Lakes, CA',
-				description: 'Magnitude 3.8 earthquake near Mammoth Lakes, California',
-				severity: 'low',
-				location: {
-					name: '12km E of Mammoth Lakes, CA',
-					lat: 37.6346,
-					lon: -118.8576
-				},
-				timestamp: new Date(mockTime.getTime() - 7200000), // 2 hours ago
-				source: 'USGS',
-				url: 'https://earthquake.usgs.gov',
-				metadata: {
-					magnitude: 3.8,
-					depth: 5.2,
-					significance: 201,
-					tsunami_warning: false
-				}
-			}
-		];
-	}
-
-	private static getMockDisasterData(): DisasterEvent[] {
-		const now = new Date();
-		return [
-			{
-				id: 'wildfire-1',
-				type: 'wildfire',
-				title: 'Wildfire burning in Angeles National Forest',
-				description: 'Fast-moving wildfire threatens residential areas',
-				severity: 'high',
-				location: {
-					name: 'Angeles National Forest, CA',
-					lat: 34.3706,
-					lon: -118.0506
-				},
-				timestamp: new Date(now.getTime() - 1800000), // 30 min ago
-				source: 'CAL FIRE',
-				url: 'https://www.fire.ca.gov'
-			},
-			{
-				id: 'hurricane-1',
-				type: 'hurricane',
-				title: 'Hurricane Category 2 approaching coast',
-				description: 'Hurricane with sustained winds of 105 mph',
-				severity: 'critical',
-				location: {
-					name: 'Gulf of Mexico',
-					lat: 27.5,
-					lon: -89.5
-				},
-				timestamp: new Date(now.getTime() - 3600000), // 1 hour ago
-				source: 'NOAA',
-				url: 'https://www.nhc.noaa.gov'
-			},
-			{
-				id: 'flood-1',
-				type: 'flood',
-				title: 'Flash flood warning issued',
-				description: 'Heavy rainfall causing dangerous flooding',
-				severity: 'medium',
-				location: {
-					name: 'Austin, TX',
-					lat: 30.2672,
-					lon: -97.7431
-				},
-				timestamp: new Date(now.getTime() - 5400000), // 1.5 hours ago
-				source: 'NWS',
-				url: 'https://www.weather.gov'
-			},
-			{
-				id: 'tornado-1',
-				type: 'tornado',
-				title: 'Tornado warning in effect',
-				description: 'Confirmed tornado on the ground',
-				severity: 'critical',
-				location: {
-					name: 'Moore, OK',
-					lat: 35.3395,
-					lon: -97.4864
-				},
-				timestamp: new Date(now.getTime() - 7200000), // 2 hours ago
-				source: 'NWS',
-				url: 'https://www.weather.gov'
-			},
-			{
-				id: 'volcano-1',
-				type: 'volcano',
-				title: 'Volcanic activity detected',
-				description: 'Increased seismic activity and gas emissions',
-				severity: 'medium',
-				location: {
-					name: 'Mount Rainier, WA',
-					lat: 46.8523,
-					lon: -121.7603
-				},
-				timestamp: new Date(now.getTime() - 10800000), // 3 hours ago
-				source: 'USGS',
-				url: 'https://volcanoes.usgs.gov'
-			}
-		];
-	}
-
-	private static getAllMockDisasterData(): DisasterEvent[] {
-		const earthquakes = this.getMockEarthquakeData();
-		const otherDisasters = this.getMockDisasterData();
-		return [...earthquakes, ...otherDisasters]
-			.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-	}
 
 	private static getEarthquakeSeverity(magnitude: number): 'low' | 'medium' | 'high' | 'critical' {
 		if (magnitude >= 7.0) return 'critical';

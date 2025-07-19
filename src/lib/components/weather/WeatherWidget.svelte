@@ -41,7 +41,7 @@
 
 <div class="widget">
 	<div class="widget-header">
-		<h2 class="widget-title">Global Weather</h2>
+		<h2 class="widget-title">🌍 Global Weather Monitor</h2>
 		<div class="flex items-center space-x-2">
 			{#if $isCitiesLoading}
 				<div class="status-indicator status-warning"></div>

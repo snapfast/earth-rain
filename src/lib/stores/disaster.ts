@@ -6,6 +6,9 @@ export const disasterEvents = writable<DisasterEvent[]>([]);
 export const isLoadingDisasters = writable<boolean>(true);
 export const disasterError = writable<string | null>(null);
 
+// Selected disaster for detailed view
+export const selectedDisaster = writable<DisasterEvent | null>(null);
+
 // Filter options
 export const selectedDisasterTypes = writable<DisasterType[]>([
 	'earthquake',
@@ -44,7 +47,6 @@ export const recentEvents = derived(
 	($events) => {
 		const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 		return $events
-			.filter(event => event.timestamp > oneHourAgo)
 			.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 	}
 );
@@ -90,4 +92,13 @@ export function setDisasterLoadingState(loading: boolean) {
 	if (loading) {
 		disasterError.set(null);
 	}
+}
+
+// Helper functions for disaster selection
+export function selectDisaster(disaster: DisasterEvent) {
+	selectedDisaster.set(disaster);
+}
+
+export function clearDisasterSelection() {
+	selectedDisaster.set(null);
 }

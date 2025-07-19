@@ -104,3 +104,25 @@ export function formatRelativeTime(date: Date): string {
 export function formatAlertTimeWithRelative(date: Date): string {
 	return `${formatAlertTimeGMT(date)} UTC, ${formatRelativeTime(date)}`;
 }
+
+/**
+ * Format alert time with stable display
+ */
+export function formatAlertTimeStable(date: Date, referenceTime: Date): string {
+	const diffMs = referenceTime.getTime() - date.getTime();
+	const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+	
+	// For alerts older than 1 hour, show only absolute time to prevent increasing relative time
+	if (diffHours >= 1) {
+		return `${formatAlertTimeGMT(date)} UTC`;
+	}
+	
+	// For very recent alerts (< 1 hour), show relative time
+	const diffMinutes = Math.floor(diffMs / (1000 * 60));
+	
+	if (diffMinutes < 1) {
+		return 'just now';
+	} else {
+		return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+	}
+}

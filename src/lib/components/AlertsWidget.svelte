@@ -1,197 +1,230 @@
 <script lang="ts">
-	import { weatherAlerts, hasActiveAlerts, isCitiesLoading, citiesError, citiesWeatherData } from '../stores/weather.js';
-	import { criticalEvents, recentEvents, isLoadingDisasters, disasterError } from '../stores/disaster.js';
+	import { selectedDisaster, clearDisasterSelection } from '../stores/disaster.js';
 	import { formatAlertTimeWithRelative } from '../utils/time.js';
-	import { derived } from 'svelte/store';
-	
-	// Combine alerts from all cities weather data
-	const allWeatherAlerts = derived(
-		citiesWeatherData,
-		($citiesData) => {
-			const allAlerts = [];
-			$citiesData.forEach(cityWeather => {
-				if (cityWeather.alerts && cityWeather.alerts.length > 0) {
-					allAlerts.push(...cityWeather.alerts);
-				}
-			});
-			return allAlerts;
-		}
-	);
-	
-	const hasAnyAlerts = derived(
-		[allWeatherAlerts, criticalEvents, recentEvents],
-		([$allAlerts, $critical, $recent]) => 
-			$allAlerts.length > 0 || $critical.length > 0 || $recent.length > 0
-	);
-	
-	// Filter toggle for critical alerts only
-	let showCriticalOnly = false;
-	
+	import { DisasterAPI } from '../api/disaster.js';
+
 	function getSeverityColor(severity: string): string {
 		switch (severity) {
-			case 'minor': return 'text-yellow-600';
-			case 'moderate': return 'text-orange-600';
-			case 'severe': return 'text-red-600';
-			case 'extreme': return 'text-red-800';
-			default: return 'text-amber-700';
+			case 'low': return 'text-green-600 bg-green-100 border-green-200';
+			case 'medium': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+			case 'high': return 'text-red-600 bg-red-100 border-red-200';
+			case 'critical': return 'text-red-800 bg-red-200 border-red-300';
+			default: return 'text-amber-600 bg-amber-100 border-amber-200';
 		}
+	}
+
+	function formatCoordinates(lat: number, lon: number): string {
+		const latDir = lat >= 0 ? 'N' : 'S';
+		const lonDir = lon >= 0 ? 'E' : 'W';
+		return `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`;
 	}
 </script>
 
-<div class="widget">
+<div class="widget" data-testid="disaster-details-widget">
 	<div class="widget-header">
-		<h2 class="widget-title">Active Alerts</h2>
+		<h2 class="widget-title">🔍 Disaster Details</h2>
 		<div class="flex items-center space-x-3">
-			<label class="flex items-center space-x-2 text-xs cursor-pointer">
-				<div class="relative">
-					<input 
-						type="checkbox" 
-						bind:checked={showCriticalOnly}
-						class="sr-only"
-					/>
-					<div class="w-8 h-4 bg-amber-200 rounded-full shadow-inner transition-colors duration-200 ease-in-out {showCriticalOnly ? 'bg-red-500' : 'bg-amber-200'}"></div>
-					<div class="absolute left-0 top-0 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ease-in-out transform {showCriticalOnly ? 'translate-x-4' : 'translate-x-0'}"></div>
-				</div>
-				<span class="text-amber-700">Critical only</span>
-			</label>
-			{#if $isCitiesLoading || $isLoadingDisasters}
-				<div class="status-indicator status-warning"></div>
-				<span class="text-sm text-amber-600">Loading</span>
-			{:else if $citiesError || $disasterError}
-				<div class="status-indicator status-error"></div>
-				<span class="text-sm text-red-600">Error</span>
-			{:else}
-				<div class="status-indicator status-online"></div>
-				<span class="text-sm text-amber-700">Live</span>
+			{#if $selectedDisaster}
+				<button 
+					on:click={clearDisasterSelection}
+					class="text-xs text-amber-600 hover:text-amber-800 transition-colors"
+					title="Clear selection"
+				>
+					✕ Clear
+				</button>
 			{/if}
 		</div>
 	</div>
 	
 	<div class="widget-content">
-		{#if $isCitiesLoading || $isLoadingDisasters}
-			<div class="text-center text-amber-700 py-8">
-				<div class="loading-spinner mx-auto mb-2"></div>
-				<p>Loading alerts data...</p>
-			</div>
-		{:else if showCriticalOnly && $criticalEvents.length > 0}
-			<!-- Critical Events Only View -->
+		{#if $selectedDisaster}
 			<div class="space-y-3">
-				{#each $criticalEvents as event}
-					<div class="border border-red-600 bg-red-600 bg-opacity-10 rounded-lg p-3 alert-critical">
-						<div class="flex items-center justify-between mb-2">
-							<span class="text-red-300 font-medium">
-								{event.type.replace('_', ' ').toUpperCase()}
-							</span>
-							<span class="text-xs text-red-600">
-								{formatAlertTimeWithRelative(event.timestamp)}
-							</span>
-						</div>
-						<div class="text-sm text-amber-900 mb-2">
-							{event.title}
-						</div>
-						<div class="text-xs text-red-300">
-							📍 {event.location.name}
+				<!-- Header Section -->
+				<div class="border-b border-amber-200 pb-3">
+					<div class="flex items-center space-x-3 mb-2">
+						<span class="text-2xl">{DisasterAPI.getDisasterTypeIcon($selectedDisaster.type)}</span>
+						<div class="flex-1">
+							<h3 class="font-semibold text-amber-900 text-lg leading-tight">{$selectedDisaster.title}</h3>
+							<div class="flex items-center space-x-2 mt-1">
+								<span class="text-xs px-2 py-1 rounded-full border {getSeverityColor($selectedDisaster.severity)}">
+									{$selectedDisaster.severity.toUpperCase()}
+								</span>
+								<span class="text-xs text-amber-700 capitalize">
+									{$selectedDisaster.type.replace('_', ' ')}
+								</span>
+							</div>
 						</div>
 					</div>
-				{/each}
-			</div>
-		{:else if $hasAnyAlerts}
-			<!-- All Alerts View -->
-			<div class="space-y-4">
-				<!-- Critical Disaster Events -->
-				{#if $criticalEvents.length > 0}
+				</div>
+
+				<!-- Main Information Grid -->
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+					<!-- Description -->
+					<div class="md:col-span-2 lg:col-span-3">
+						<h4 class="text-sm font-medium text-amber-800 mb-2">Description</h4>
+						<p class="text-sm text-amber-700">{$selectedDisaster.description}</p>
+					</div>
+
+					<!-- Location Information -->
 					<div>
-						<h3 class="text-sm font-medium text-red-600 mb-2 flex items-center">
-							🚨 Critical Events
-						</h3>
-						<div class="space-y-3">
-							{#each $criticalEvents as event}
-								<div class="border border-red-600 bg-red-600 bg-opacity-10 rounded-lg p-3 alert-critical">
-									<div class="flex items-center justify-between mb-2">
-										<span class="text-red-300 font-medium">
-											{event.type.replace('_', ' ').toUpperCase()}
-										</span>
-										<span class="text-xs text-red-600">
-											{formatAlertTimeWithRelative(event.timestamp)}
-										</span>
-									</div>
-									<div class="text-sm text-amber-900 mb-2">
-										{event.title}
-									</div>
-									<div class="text-xs text-red-300">
-										📍 {event.location.name}
-									</div>
-								</div>
-							{/each}
+						<h4 class="text-sm font-medium text-amber-800 mb-2">Location</h4>
+						<div class="space-y-1 text-sm text-amber-700">
+							<div>📍 {$selectedDisaster.location.name}</div>
+							{#if $selectedDisaster.location.region}
+								<div>🗺️ {$selectedDisaster.location.region}</div>
+							{/if}
+							<div class="font-mono text-xs">
+								🌐 {formatCoordinates($selectedDisaster.location.lat, $selectedDisaster.location.lon)}
+							</div>
 						</div>
+					</div>
+
+					<!-- Time Information -->
+					<div>
+						<h4 class="text-sm font-medium text-amber-800 mb-2">Timing</h4>
+						<div class="space-y-1 text-sm text-amber-700">
+							<div>🕒 {formatAlertTimeWithRelative($selectedDisaster.timestamp)}</div>
+							<div class="text-xs text-amber-600">
+								Full time: {$selectedDisaster.timestamp.toLocaleString('en-US', { timeZone: 'UTC' })} UTC
+							</div>
+						</div>
+					</div>
+
+					<!-- Source Information -->
+					<div>
+						<h4 class="text-sm font-medium text-amber-800 mb-2">Data Source</h4>
+						<div class="space-y-2">
+							<div class="text-sm text-amber-700">
+								<span class="font-medium">Source:</span> {$selectedDisaster.source}
+							</div>
+							{#if $selectedDisaster.url}
+								<a 
+									href={$selectedDisaster.url} 
+									target="_blank" 
+									rel="noopener noreferrer"
+									class="inline-flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+								>
+									<span>🔗 View Source</span>
+									<span class="text-xs">↗</span>
+								</a>
+							{/if}
+						</div>
+					</div>
+				</div>
+
+				<!-- Type-specific Details -->
+				{#if $selectedDisaster.type === 'earthquake' && $selectedDisaster.metadata}
+					{@const earthquake = $selectedDisaster}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+						<div class="md:col-span-2 lg:col-span-4">
+							<h4 class="text-sm font-medium text-amber-800 mb-2">Earthquake Details</h4>
+						</div>
+						{#if earthquake.metadata?.magnitude !== undefined}
+							<div class="bg-amber-50 rounded-lg p-3 border border-amber-200">
+								<div class="text-xs text-amber-600 mb-1">Magnitude</div>
+								<div class="text-lg font-semibold text-amber-900">{earthquake.metadata.magnitude}</div>
+							</div>
+						{/if}
+						{#if earthquake.metadata?.depth !== undefined}
+							<div class="bg-amber-50 rounded-lg p-3 border border-amber-200">
+								<div class="text-xs text-amber-600 mb-1">Depth</div>
+								<div class="text-lg font-semibold text-amber-900">{earthquake.metadata.depth.toFixed(1)} km</div>
+							</div>
+						{/if}
+						{#if earthquake.metadata?.significance !== undefined}
+							<div class="bg-amber-50 rounded-lg p-3 border border-amber-200">
+								<div class="text-xs text-amber-600 mb-1">Significance</div>
+								<div class="text-lg font-semibold text-amber-900">{earthquake.metadata.significance}</div>
+							</div>
+						{/if}
+						{#if earthquake.metadata?.tsunami_warning !== undefined}
+							<div class="bg-amber-50 rounded-lg p-3 border border-amber-200">
+								<div class="text-xs text-amber-600 mb-1">Tsunami Warning</div>
+								<div class="text-lg font-semibold {earthquake.metadata.tsunami_warning ? 'text-red-600' : 'text-green-600'}">
+									{earthquake.metadata.tsunami_warning ? 'YES' : 'No'}
+								</div>
+							</div>
+						{/if}
 					</div>
 				{/if}
-				
-				<!-- Weather Alerts -->
-				{#if $allWeatherAlerts.length > 0}
-					<div>
-						<h3 class="text-sm font-medium text-yellow-600 mb-2 flex items-center">
-							⚠️ Weather Alerts
-						</h3>
-						<div class="space-y-3">
-							{#each $allWeatherAlerts as alert}
-								<div class="border border-yellow-600 bg-yellow-600 bg-opacity-10 rounded-lg p-3">
-									<div class="flex items-center justify-between mb-2">
-										<span class="text-yellow-300 font-medium {getSeverityColor(alert.severity)}">
-											{alert.severity.toUpperCase()}
-										</span>
-										<span class="text-xs text-yellow-600">
-											{formatAlertTimeWithRelative(alert.start_time)}
-										</span>
-									</div>
-									<div class="text-sm text-amber-900 mb-2">
-										{alert.title}
-									</div>
-									<div class="text-xs text-yellow-300 mb-1">
-										📍 {alert.areas.join(', ')}
-									</div>
-									{#if alert.end_time}
-										<div class="text-xs text-yellow-400">
-											Until: {formatAlertTimeGMT(alert.end_time)} UTC
-										</div>
-									{/if}
-								</div>
-							{/each}
+
+				{#if $selectedDisaster.type === 'flood' && $selectedDisaster.metadata}
+					{@const flood = $selectedDisaster}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+						<div class="md:col-span-2 lg:col-span-3">
+							<h4 class="text-sm font-medium text-amber-800 mb-2">Flood Details</h4>
 						</div>
+						{#if flood.metadata?.water_level !== undefined}
+							<div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+								<div class="text-xs text-blue-600 mb-1">Water Level</div>
+								<div class="text-lg font-semibold text-blue-900">{flood.metadata.water_level} ft</div>
+							</div>
+						{/if}
+						{#if flood.metadata?.flood_stage !== undefined}
+							<div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+								<div class="text-xs text-blue-600 mb-1">Flood Stage</div>
+								<div class="text-lg font-semibold text-blue-900">{flood.metadata.flood_stage} ft</div>
+							</div>
+						{/if}
+						{#if flood.metadata?.forecast_peak}
+							<div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+								<div class="text-xs text-blue-600 mb-1">Forecast Peak</div>
+								<div class="text-lg font-semibold text-blue-900">{flood.metadata.forecast_peak} ft</div>
+							</div>
+						{/if}
+						{#if flood.metadata?.affected_areas && flood.metadata.affected_areas.length > 0}
+							<div class="md:col-span-2 lg:col-span-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
+								<div class="text-xs text-blue-600 mb-1">Affected Areas</div>
+								<div class="text-sm font-medium text-blue-900">{flood.metadata.affected_areas.join(', ')}</div>
+							</div>
+						{/if}
 					</div>
 				{/if}
-				
-				<!-- Recent Activity -->
-				{#if $recentEvents.length > 0}
-					<div>
-						<div class="space-y-3">
-							{#each $recentEvents as event}
-								<div class="border border-amber-200 rounded-lg p-3">
-									<div class="flex items-center justify-between mb-2">
-										<span class="text-amber-800 text-sm">
-											{event.type.replace('_', ' ')}
-										</span>
-										<span class="text-xs text-amber-700">
-											{formatAlertTimeWithRelative(event.timestamp)}
-										</span>
-									</div>
-									<div class="text-sm text-amber-900 mb-2">
-										{event.title}
-									</div>
-									<div class="text-xs text-amber-700">
-										📍 {event.location.name}
-									</div>
-								</div>
-							{/each}
+
+				{#if $selectedDisaster.type === 'severe_weather' && $selectedDisaster.metadata}
+					{@const weather = $selectedDisaster}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+						<div class="md:col-span-2 lg:col-span-4">
+							<h4 class="text-sm font-medium text-amber-800 mb-2">Weather Details</h4>
 						</div>
+						{#if weather.metadata?.wind_speed}
+							<div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+								<div class="text-xs text-purple-600 mb-1">Wind Speed</div>
+								<div class="text-lg font-semibold text-purple-900">{weather.metadata.wind_speed} mph</div>
+							</div>
+						{/if}
+						{#if weather.metadata?.hail_size}
+							<div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+								<div class="text-xs text-purple-600 mb-1">Hail Size</div>
+								<div class="text-lg font-semibold text-purple-900">{weather.metadata.hail_size}"</div>
+							</div>
+						{/if}
+						{#if weather.metadata?.tornado_warning !== undefined}
+							<div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+								<div class="text-xs text-purple-600 mb-1">Tornado Warning</div>
+								<div class="text-lg font-semibold {weather.metadata.tornado_warning ? 'text-red-600' : 'text-green-600'}">
+									{weather.metadata.tornado_warning ? 'YES' : 'No'}
+								</div>
+							</div>
+						{/if}
+						{#if weather.metadata?.flash_flood_warning !== undefined}
+							<div class="bg-purple-50 rounded-lg p-3 border border-purple-200">
+								<div class="text-xs text-purple-600 mb-1">Flash Flood Warning</div>
+								<div class="text-lg font-semibold {weather.metadata.flash_flood_warning ? 'text-red-600' : 'text-green-600'}">
+									{weather.metadata.flash_flood_warning ? 'YES' : 'No'}
+								</div>
+							</div>
+						{/if}
 					</div>
 				{/if}
 			</div>
 		{:else}
 			<div class="text-center text-amber-700 py-8">
-				<div class="text-4xl mb-2">✅</div>
-				<p>No active alerts</p>
-				<p class="text-sm text-amber-600 mt-1">All systems operating normally</p>
+				<div class="text-4xl mb-4">🔍</div>
+				<h3 class="text-lg font-medium mb-2">No Disaster Selected</h3>
+				<p class="text-sm text-amber-600">
+					Click on any disaster from the Disaster Monitoring panel to view detailed information here.
+				</p>
 			</div>
 		{/if}
 	</div>
