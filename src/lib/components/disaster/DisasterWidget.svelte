@@ -1,23 +1,8 @@
 <script lang="ts">
 	import { disasterEvents, isLoadingDisasters, disasterError } from '../../stores/disaster.js';
 	import { DisasterAPI } from '../../api/disaster.js';
+	import { formatAlertTimeWithRelative } from '../../utils/time.js';
 	import type { DisasterEvent } from '../../types/disaster.js';
-	
-	function formatTimestamp(date: Date): string {
-		const now = new Date();
-		const diffMs = now.getTime() - date.getTime();
-		const diffMins = Math.floor(diffMs / (1000 * 60));
-		const diffHours = Math.floor(diffMins / 60);
-		const diffDays = Math.floor(diffHours / 24);
-		
-		if (diffMins < 60) {
-			return `${diffMins}m ago`;
-		} else if (diffHours < 24) {
-			return `${diffHours}h ago`;
-		} else {
-			return `${diffDays}d ago`;
-		}
-	}
 	
 	function getSeverityClass(severity: string): string {
 		return `severity-${severity}`;
@@ -69,7 +54,7 @@
 								</span>
 							</div>
 							<span class="text-xs text-amber-700">
-								{formatTimestamp(event.timestamp)}
+								{formatAlertTimeWithRelative(event.timestamp)}
 							</span>
 						</div>
 						

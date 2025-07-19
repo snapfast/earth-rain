@@ -34,14 +34,18 @@ export const filteredDisasterEvents = derived(
 
 export const criticalEvents = derived(
 	disasterEvents,
-	($events) => $events.filter(event => event.severity === 'critical')
+	($events) => $events
+		.filter(event => event.severity === 'critical')
+		.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 );
 
 export const recentEvents = derived(
 	disasterEvents,
 	($events) => {
 		const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-		return $events.filter(event => event.timestamp > oneHourAgo);
+		return $events
+			.filter(event => event.timestamp > oneHourAgo)
+			.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 	}
 );
 

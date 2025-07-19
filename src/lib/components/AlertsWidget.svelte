@@ -1,7 +1,31 @@
 <script lang="ts">
-	import { weatherAlerts, hasActiveAlerts, isCitiesLoading, citiesError } from '../stores/weather.js';
+	import { weatherAlerts, hasActiveAlerts, isCitiesLoading, citiesError, citiesWeatherData } from '../stores/weather.js';
 	import { criticalEvents, recentEvents, isLoadingDisasters, disasterError } from '../stores/disaster.js';
-	import { formatAlertTimeGMT } from '../utils/time.js';
+	import { formatAlertTimeWithRelative } from '../utils/time.js';
+	import { derived } from 'svelte/store';
+	
+	// Combine alerts from all cities weather data
+	const allWeatherAlerts = derived(
+		citiesWeatherData,
+		($citiesData) => {
+			const allAlerts = [];
+			$citiesData.forEach(cityWeather => {
+				if (cityWeather.alerts && cityWeather.alerts.length > 0) {
+					allAlerts.push(...cityWeather.alerts);
+				}
+			});
+			return allAlerts;
+		}
+	);
+	
+	const hasAnyAlerts = derived(
+		[allWeatherAlerts, criticalEvents, recentEvents],
+		([$allAlerts, $critical, $recent]) => 
+			$allAlerts.length > 0 || $critical.length > 0 || $recent.length > 0
+	);
+	
+	// Filter toggle for critical alerts only
+	let showCriticalOnly = false;
 	
 	function getSeverityColor(severity: string): string {
 		switch (severity) {
@@ -17,7 +41,19 @@
 <div class="widget">
 	<div class="widget-header">
 		<h2 class="widget-title">Active Alerts</h2>
-		<div class="flex items-center space-x-2">
+		<div class="flex items-center space-x-3">
+			<label class="flex items-center space-x-2 text-xs cursor-pointer">
+				<div class="relative">
+					<input 
+						type="checkbox" 
+						bind:checked={showCriticalOnly}
+						class="sr-only"
+					/>
+					<div class="w-8 h-4 bg-amber-200 rounded-full shadow-inner transition-colors duration-200 ease-in-out {showCriticalOnly ? 'bg-red-500' : 'bg-amber-200'}"></div>
+					<div class="absolute left-0 top-0 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ease-in-out transform {showCriticalOnly ? 'translate-x-4' : 'translate-x-0'}"></div>
+				</div>
+				<span class="text-amber-700">Critical only</span>
+			</label>
 			{#if $isCitiesLoading || $isLoadingDisasters}
 				<div class="status-indicator status-warning"></div>
 				<span class="text-sm text-amber-600">Loading</span>
@@ -37,7 +73,30 @@
 				<div class="loading-spinner mx-auto mb-2"></div>
 				<p>Loading alerts data...</p>
 			</div>
-		{:else if $hasActiveAlerts || $criticalEvents.length > 0 || $recentEvents.length > 0}
+		{:else if showCriticalOnly && $criticalEvents.length > 0}
+			<!-- Critical Events Only View -->
+			<div class="space-y-3">
+				{#each $criticalEvents as event}
+					<div class="border border-red-600 bg-red-600 bg-opacity-10 rounded-lg p-3 alert-critical">
+						<div class="flex items-center justify-between mb-2">
+							<span class="text-red-300 font-medium">
+								{event.type.replace('_', ' ').toUpperCase()}
+							</span>
+							<span class="text-xs text-red-600">
+								{formatAlertTimeWithRelative(event.timestamp)}
+							</span>
+						</div>
+						<div class="text-sm text-amber-900 mb-2">
+							{event.title}
+						</div>
+						<div class="text-xs text-red-300">
+							📍 {event.location.name}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else if $hasAnyAlerts}
+			<!-- All Alerts View -->
 			<div class="space-y-4">
 				<!-- Critical Disaster Events -->
 				{#if $criticalEvents.length > 0}
@@ -53,7 +112,7 @@
 											{event.type.replace('_', ' ').toUpperCase()}
 										</span>
 										<span class="text-xs text-red-600">
-											{formatAlertTimeGMT(event.timestamp)} UTC
+											{formatAlertTimeWithRelative(event.timestamp)}
 										</span>
 									</div>
 									<div class="text-sm text-amber-900 mb-2">
@@ -69,20 +128,20 @@
 				{/if}
 				
 				<!-- Weather Alerts -->
-				{#if $hasActiveAlerts}
+				{#if $allWeatherAlerts.length > 0}
 					<div>
 						<h3 class="text-sm font-medium text-yellow-600 mb-2 flex items-center">
 							⚠️ Weather Alerts
 						</h3>
 						<div class="space-y-3">
-							{#each $weatherAlerts as alert}
+							{#each $allWeatherAlerts as alert}
 								<div class="border border-yellow-600 bg-yellow-600 bg-opacity-10 rounded-lg p-3">
 									<div class="flex items-center justify-between mb-2">
 										<span class="text-yellow-300 font-medium {getSeverityColor(alert.severity)}">
 											{alert.severity.toUpperCase()}
 										</span>
 										<span class="text-xs text-yellow-600">
-											{formatAlertTimeGMT(alert.start_time)} UTC
+											{formatAlertTimeWithRelative(alert.start_time)}
 										</span>
 									</div>
 									<div class="text-sm text-amber-900 mb-2">
@@ -113,7 +172,7 @@
 											{event.type.replace('_', ' ')}
 										</span>
 										<span class="text-xs text-amber-700">
-											{formatAlertTimeGMT(event.timestamp)} UTC
+											{formatAlertTimeWithRelative(event.timestamp)}
 										</span>
 									</div>
 									<div class="text-sm text-amber-900 mb-2">
