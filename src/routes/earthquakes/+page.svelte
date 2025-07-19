@@ -154,7 +154,7 @@
 						<div class="space-y-2 text-sm">
 							<div class="flex justify-between">
 								<span class="text-amber-600">Depth:</span>
-								<span class="text-amber-800 font-medium">{earthquake.metadata.depth}km</span>
+								<span class="text-amber-800 font-medium">{earthquake.metadata.depth.toFixed(2)} km</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-amber-600">Significance:</span>

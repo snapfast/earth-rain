@@ -69,7 +69,7 @@
 						{#if event.type === 'earthquake' && event.metadata}
 							<div class="text-xs text-amber-600 mt-1">
 								Magnitude: {event.metadata.magnitude} • 
-								Depth: {event.metadata.depth}km
+								Depth: {event.metadata.depth.toFixed(2)} km
 								{#if event.metadata.tsunami_warning}
 									• <span class="text-red-400">Tsunami Warning</span>
 								{/if}
