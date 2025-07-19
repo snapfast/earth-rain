@@ -4,7 +4,7 @@ import type { WeatherData, LocationData } from '../types/weather.js';
 // Weather data stores
 export const weatherData = writable<WeatherData | null>(null);
 export const currentLocation = writable<LocationData | null>(null);
-export const isLoading = writable<boolean>(false);
+export const isLoading = writable<boolean>(true);
 export const error = writable<string | null>(null);
 
 // Multi-city weather data

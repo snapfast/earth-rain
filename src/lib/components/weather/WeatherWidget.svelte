@@ -44,11 +44,15 @@
 		<h2 class="widget-title">Global Weather</h2>
 		<div class="flex items-center space-x-2">
 			{#if $isCitiesLoading}
-				<div class="loading-spinner"></div>
+				<div class="status-indicator status-warning"></div>
+				<span class="text-sm text-amber-600">Loading</span>
+			{:else if $citiesError}
+				<div class="status-indicator status-error"></div>
+				<span class="text-sm text-red-600">Error</span>
 			{:else}
 				<div class="status-indicator status-online"></div>
+				<span class="text-sm text-amber-700">Live</span>
 			{/if}
-			<span class="text-sm text-gray-400">Live</span>
 		</div>
 	</div>
 	

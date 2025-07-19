@@ -3,7 +3,7 @@ import { TimeAPI } from '../api/time.js';
 
 // Current UTC time from API
 export const currentTime = writable<Date>(new Date());
-export const isTimeLoading = writable<boolean>(false);
+export const isTimeLoading = writable<boolean>(true);
 export const timeError = writable<string | null>(null);
 
 // Update interval for time sync

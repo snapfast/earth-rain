@@ -241,6 +241,23 @@ html, body {
 	background: rgba(139, 116, 88, 0.5);
 }
 
+/* City selector dropdown */
+.city-dropdown {
+	appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b45309' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 0.5rem center;
+	background-size: 1rem;
+	padding-right: 2rem;
+	transition: color 0.2s ease;
+}
+
+.city-dropdown option {
+	background: rgba(255, 253, 249, 0.95);
+	color: #3d2914;
+	padding: 0.5rem;
+}
+
 /* Kiosk mode styles */
 @media (display-mode: fullscreen) {
 	body {

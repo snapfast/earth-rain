@@ -3,7 +3,7 @@ import type { DisasterEvent, DisasterType } from '../types/disaster.js';
 
 // Disaster events store
 export const disasterEvents = writable<DisasterEvent[]>([]);
-export const isLoadingDisasters = writable<boolean>(false);
+export const isLoadingDisasters = writable<boolean>(true);
 export const disasterError = writable<string | null>(null);
 
 // Filter options

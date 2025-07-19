@@ -6,22 +6,39 @@
 	// For this MVP, we'll show a static map placeholder
 	// In a full implementation, this would integrate with Leaflet, Mapbox, or Google Maps
 	
-	function getMapUrl(): string {
-		if ($currentLocation) {
-			const { lat, lon } = $currentLocation;
-			// Using OpenStreetMap static map service as example
-			return `https://www.openstreetmap.org/export/embed.html?bbox=${lon-2},${lat-2},${lon+2},${lat+2}&layer=mapnik&marker=${lat},${lon}`;
-		}
-		return '';
-	}
+	// Make map URL reactive to location changes
+	$: mapUrl = $currentLocation ? 
+		`https://www.openstreetmap.org/export/embed.html?bbox=${$currentLocation.lon-2},${$currentLocation.lat-2},${$currentLocation.lon+2},${$currentLocation.lat+2}&layer=mapnik&marker=${$currentLocation.lat},${$currentLocation.lon}` 
+		: '';
 	
-	$: nearbyEvents = $disasterEvents.filter(event => {
-		if (!$currentLocation) return false;
-		// Simple distance calculation (not precise, but good for demo)
-		const latDiff = Math.abs(event.location.lat - $currentLocation.lat);
-		const lonDiff = Math.abs(event.location.lon - $currentLocation.lon);
-		return latDiff < 10 && lonDiff < 10; // Within ~1000km
-	}).slice(0, 5);
+	// Calculate distance between two coordinates using Haversine formula
+	function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+		const R = 6371; // Earth's radius in kilometers
+		const dLat = (lat2 - lat1) * Math.PI / 180;
+		const dLon = (lon2 - lon1) * Math.PI / 180;
+		const a = 
+			Math.sin(dLat/2) * Math.sin(dLat/2) +
+			Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+			Math.sin(dLon/2) * Math.sin(dLon/2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		return R * c; // Distance in kilometers
+	}
+
+	$: nearbyEvents = $currentLocation ? 
+		$disasterEvents
+			.map(event => ({
+				...event,
+				distance: calculateDistance(
+					$currentLocation.lat, 
+					$currentLocation.lon, 
+					event.location.lat, 
+					event.location.lon
+				)
+			}))
+			.filter(event => event.distance <= 2000) // Within 2000km
+			.sort((a, b) => a.distance - b.distance) // Sort by distance (closest first)
+			.slice(0, 5) // Show top 5 closest events
+		: [];
 </script>
 
 <div class="widget">
@@ -37,9 +54,9 @@
 		<div class="h-full flex flex-col space-y-4">
 			<!-- Map placeholder -->
 			<div class="flex-1 bg-amber-50 rounded-lg border border-amber-200 relative overflow-hidden">
-				{#if $currentLocation}
+				{#if $currentLocation && mapUrl}
 					<iframe
-						src={getMapUrl()}
+						src={mapUrl}
 						class="w-full h-full"
 						style="border: none;"
 						title="Regional Map"
@@ -58,19 +75,26 @@
 			<!-- Nearby events list -->
 			{#if nearbyEvents.length > 0}
 				<div class="border-t border-amber-200 pt-4">
-					<h3 class="text-sm font-medium text-amber-800 mb-2">Nearby Events</h3>
+					<h3 class="text-sm font-medium text-amber-800 mb-2">
+						Events near {$currentLocation?.name || 'Selected City'}
+					</h3>
 					<div class="space-y-2 max-h-32 overflow-y-auto">
 						{#each nearbyEvents as event}
 							<div class="flex items-center justify-between text-xs">
-								<div class="flex items-center space-x-2">
+								<div class="flex items-center space-x-2 flex-1 min-w-0">
 									<span>{DisasterAPI.getDisasterTypeIcon(event.type)}</span>
-									<span class="text-amber-800">
-										{event.location.name}
-									</span>
+									<div class="flex flex-col min-w-0">
+										<span class="text-amber-800 truncate">
+											{event.location.name}
+										</span>
+										<span class="text-amber-600 text-xs">
+											{Math.round(event.distance)}km away
+										</span>
+									</div>
 								</div>
-								<div class="flex items-center space-x-2">
+								<div class="flex items-center space-x-1 flex-shrink-0">
 									{#if event.type === 'earthquake' && event.metadata}
-										<span class="text-amber-900">M{event.metadata.magnitude}</span>
+										<span class="text-amber-900 text-xs">M{event.metadata.magnitude}</span>
 									{/if}
 									<span class="text-{DisasterAPI.getSeverityColor(event.severity)} text-xs">
 										{event.severity}
@@ -84,7 +108,10 @@
 				<div class="border-t border-amber-200 pt-4">
 					<div class="text-center text-amber-700 text-sm">
 						<div class="text-2xl mb-1">📍</div>
-						<p>No nearby events</p>
+						<p>No events within 2000km</p>
+						<p class="text-xs text-amber-600 mt-1">
+							of {$currentLocation?.name || 'selected city'}
+						</p>
 					</div>
 				</div>
 			{/if}

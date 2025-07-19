@@ -35,11 +35,15 @@
 		<h2 class="widget-title">Disaster Alerts</h2>
 		<div class="flex items-center space-x-2">
 			{#if $isLoadingDisasters}
-				<div class="loading-spinner"></div>
+				<div class="status-indicator status-warning"></div>
+				<span class="text-sm text-amber-600">Loading</span>
+			{:else if $disasterError}
+				<div class="status-indicator status-error"></div>
+				<span class="text-sm text-red-600">Error</span>
 			{:else}
 				<div class="status-indicator status-online"></div>
+				<span class="text-sm text-amber-700">USGS</span>
 			{/if}
-			<span class="text-sm text-amber-700">USGS</span>
 		</div>
 	</div>
 	
