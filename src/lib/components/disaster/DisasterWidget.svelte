@@ -27,7 +27,7 @@
 				<span class="text-sm text-red-600">Error</span>
 			{:else}
 				<div class="status-indicator status-online"></div>
-				<span class="text-sm text-amber-700">USGS</span>
+				<span class="text-sm text-amber-700">Live</span>
 			{/if}
 		</div>
 	</div>
